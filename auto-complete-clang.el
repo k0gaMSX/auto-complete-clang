@@ -181,7 +181,7 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
             (1+ (current-column)))))
 
 (defsubst ac-clang-build-complete-args (pos)
-  (append '("-cc1" "-fsyntax-only")
+  (append '("-cc1" "-x" "c++" "-fsyntax-only" "-fexceptions")
           ac-clang-flags
           (when (stringp ac-clang-prefix-header)
             (list "-include-pch" (expand-file-name ac-clang-prefix-header)))
