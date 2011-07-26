@@ -75,6 +75,12 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
   (interactive)
   (setq ac-clang-flags (split-string (read-string "New cflags: "))))
 
+;;; Append cflags for clang
+(defun ac-clang-append-cflags ()
+  "append cflags for clang from input string"
+  (interactive)
+  (setq ac-clang-flags (append ac-clang-flags (split-string (read-string "Cflags to append: ")))))
+
 ;;; Set new cflags from shell command output
 (defun ac-clang-set-cflags-from-shell-command ()
   "set new cflags for ac-clang from shell command output"
