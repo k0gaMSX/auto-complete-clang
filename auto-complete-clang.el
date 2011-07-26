@@ -157,18 +157,21 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
         (goto-char (point-min))))))
 
 (defun ac-clang-call-process (prefix &rest args)
+  (let ((name-of-buffer-to-parse (buffer-name)))
   (with-temp-buffer
-    (let ((res (apply 'call-process ac-clang-executable nil t nil args)))
+      (insert-buffer name-of-buffer-to-parse)
+      (let ((res (apply 'call-process-region (point-min) (point-max)
+                        ac-clang-executable t t nil args)))
       (unless (eq 0 res)
         (ac-clang-handle-error res args))
       ;; Still try to get any useful input.
-      (ac-clang-parse-output prefix))))
+        (ac-clang-parse-output prefix)))))
 
 
 (defsubst ac-clang-build-location (pos)
   (save-excursion
     (goto-char pos)
-    (format "%s:%d:%d" buffer-file-name (line-number-at-pos)
+    (format "-:%d:%d" (line-number-at-pos)
             (1+ (current-column)))))
 
 (defsubst ac-clang-build-complete-args (pos)
@@ -177,8 +180,7 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
           (when (stringp ac-clang-prefix-header)
             (list "-include-pch" (expand-file-name ac-clang-prefix-header)))
           '("-code-completion-at")
-          (list (ac-clang-build-location pos))
-          (list buffer-file-name)))
+          (list (ac-clang-build-location pos))))
 
 
 (defsubst ac-clang-clean-document (s)
@@ -207,9 +209,6 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
   :group 'auto-complete)
 
 (defun ac-clang-candidate ()
-  (and ac-clang-auto-save
-       (buffer-modified-p)
-       (basic-save-buffer))
   (apply 'ac-clang-call-process
          ac-prefix
          (ac-clang-build-complete-args (- (point) (length ac-prefix)))))
