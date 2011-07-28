@@ -73,6 +73,12 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
   (interactive)
   (setq ac-clang-flags (split-string (read-string "New cflags: "))))
 
+;;; Append cflags for clang
+(defun ac-clang-append-cflags ()
+  "append cflags for clang from input string"
+  (interactive)
+  (setq ac-clang-flags (append ac-clang-flags (split-string (read-string "Cflags to append: ")))))
+
 ;;; Set new cflags from shell command output
 (defun ac-clang-set-cflags-from-shell-command ()
   "set new cflags for ac-clang from shell command output"
@@ -172,19 +178,18 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
 (defsubst ac-clang-build-location (pos)
   (save-excursion
     (goto-char pos)
-    (format "-:%d:%d"  (line-number-at-pos)
+    (format "-:%d:%d" (line-number-at-pos)
             (1+ (current-column)))))
 
 (defsubst ac-clang-build-complete-args (pos)
-  (append '("-cc1" "-fsyntax-only")
+  (append '("-cc1" "-x" "c++" "-fsyntax-only" "-fexceptions")
           (when ac-clang-flags-function
               (apply ac-clang-flags-function))
           ac-clang-flags
           (when (stringp ac-clang-prefix-header)
             (list "-include-pch" (expand-file-name ac-clang-prefix-header)))
           '("-code-completion-at")
-          (list (ac-clang-build-location pos))
-          '("-")))
+          (list (ac-clang-build-location pos))))
 
 
 (defsubst ac-clang-clean-document (s)
