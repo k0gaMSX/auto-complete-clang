@@ -40,6 +40,11 @@
 
 
 ;;; Extra compilation flags to pass to clang.
+(defvar ac-clang-flags-function nil
+  "Function called to getting flags for Cland executable")
+
+
+
 (defcustom ac-clang-flags nil
   "Extra flags to pass to the Clang executable.
 This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \"-I.\" )."
@@ -172,6 +177,8 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
 
 (defsubst ac-clang-build-complete-args (pos)
   (append '("-cc1" "-fsyntax-only")
+          (when ac-clang-flags-function
+              (apply ac-clang-flags-function))
           ac-clang-flags
           (when (stringp ac-clang-prefix-header)
             (list "-include-pch" (expand-file-name ac-clang-prefix-header)))
