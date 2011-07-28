@@ -38,13 +38,6 @@
   :group 'auto-complete
   :type 'file)
 
-(defcustom ac-clang-auto-save t
-  "*Determines whether to save the buffer when retrieving completions.
-clang can only complete correctly when the buffer has been saved."
-  :group 'auto-complete
-  :type '(choice (const :tag "Off" nil)
-                 (const :tag "On" t)))
-
 
 ;;; Extra compilation flags to pass to clang.
 (defcustom ac-clang-flags nil
@@ -53,7 +46,7 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
   :group 'auto-complete
   :type '(repeat (string :tag "Argument" "")))
 
-;;; The prefix header to use with Clang code completion. 
+;;; The prefix header to use with Clang code completion.
 (defvar ac-clang-prefix-header nil)
 
 ;;; Set the Clang prefix header
@@ -157,18 +150,24 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
         (goto-char (point-min))))))
 
 (defun ac-clang-call-process (prefix &rest args)
-  (with-temp-buffer
-    (let ((res (apply 'call-process ac-clang-executable nil t nil args)))
-      (unless (eq 0 res)
-        (ac-clang-handle-error res args))
+  (let ((name-buffer (buffer-name)))
+    (save-restriction
+      (widen)
+      (with-temp-buffer
+        (insert-buffer name-buffer)
+        (let ((res (apply 'call-process-region
+                          (point-min) (point-max)
+                          ac-clang-executable t t nil args)))
+          (unless (eq 0 res)
+            (ac-clang-handle-error res args))
       ;; Still try to get any useful input.
-      (ac-clang-parse-output prefix))))
+      (ac-clang-parse-output prefix))))))
 
 
 (defsubst ac-clang-build-location (pos)
   (save-excursion
     (goto-char pos)
-    (format "%s:%d:%d" buffer-file-name (line-number-at-pos)
+    (format "-:%d:%d"  (line-number-at-pos)
             (1+ (current-column)))))
 
 (defsubst ac-clang-build-complete-args (pos)
@@ -178,7 +177,7 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
             (list "-include-pch" (expand-file-name ac-clang-prefix-header)))
           '("-code-completion-at")
           (list (ac-clang-build-location pos))
-          (list buffer-file-name)))
+          '("-")))
 
 
 (defsubst ac-clang-clean-document (s)
@@ -207,9 +206,6 @@ This variable will typically contain include paths, e.g., ( \"-I~/MyProject\", \
   :group 'auto-complete)
 
 (defun ac-clang-candidate ()
-  (and ac-clang-auto-save
-       (buffer-modified-p)
-       (basic-save-buffer))
   (apply 'ac-clang-call-process
          ac-prefix
          (ac-clang-build-complete-args (- (point) (length ac-prefix)))))
